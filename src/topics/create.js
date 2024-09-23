@@ -14,6 +14,7 @@ const posts = require('../posts');
 const privileges = require('../privileges');
 const categories = require('../categories');
 const translator = require('../translator');
+const { logInfo } = require('../idlog/idlogger');
 
 module.exports = function (Topics) {
 	Topics.create = async function (data) {
@@ -21,6 +22,7 @@ module.exports = function (Topics) {
 		const timestamp = data.timestamp || Date.now();
 
 		const tid = await db.incrObjectField('global', 'nextTid');
+		logInfo('ll10', `Topics.create started. tid: ${tid} title: ${data.title}`);
 
 		let topicData = {
 			tid: tid,
@@ -78,8 +80,10 @@ module.exports = function (Topics) {
 	};
 
 	Topics.post = async function (data) {
+		logInfo('ll11', 'Topics.post started');
 		data = await plugins.hooks.fire('filter:topic.post', data);
 		const { uid } = data;
+
 
 		const [categoryExists, canCreate, canTag, isAdmin] = await Promise.all([
 			categories.exists(data.cid),
@@ -164,6 +168,8 @@ module.exports = function (Topics) {
 	};
 
 	Topics.reply = async function (data) {
+		logInfo('ltr1', 'Topics.reply started');
+
 		data = await plugins.hooks.fire('filter:topic.reply', data);
 		const { tid } = data;
 		const { uid } = data;
@@ -224,6 +230,8 @@ module.exports = function (Topics) {
 	};
 
 	async function onNewPost(postData, data) {
+		logInfo('ltr2', 'Topics.onNewPost started. ');
+
 		const { tid, uid } = postData;
 		await Topics.markAsRead([tid], uid);
 		const [
@@ -252,6 +260,8 @@ module.exports = function (Topics) {
 		postData.selfPost = false;
 		postData.timestampISO = utils.toISOString(postData.timestamp);
 		postData.topic.title = String(postData.topic.title);
+
+		logInfo('ltr3', `Topics.onNewPost. postData: ${JSON.stringify(postData)}`);
 
 		return postData;
 	}

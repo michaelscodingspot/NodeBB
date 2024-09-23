@@ -5,6 +5,7 @@ const meta = require('../meta');
 const privileges = require('../privileges');
 const plugins = require('../plugins');
 const groups = require('../groups');
+const { logInfo, logError } = require('../idlog/idlogger');
 
 module.exports = function (User) {
 	User.isReadyToPost = async function (uid, cid) {
@@ -30,6 +31,8 @@ module.exports = function (User) {
 	};
 
 	async function isReady(uid, cid, field) {
+		logInfo("lll2", "posts.isReady started");
+
 		if (parseInt(uid, 10) === 0) {
 			return;
 		}
@@ -40,6 +43,8 @@ module.exports = function (User) {
 		]);
 
 		if (!userData.uid) {
+			logError("lle0", "posts.isReady userData.uid is empty");
+
 			throw new Error('[[error:no-user]]');
 		}
 
@@ -74,14 +79,20 @@ module.exports = function (User) {
 			meta.config.newbieReputationThreshold > userData.reputation &&
 			now - lasttime < meta.config.newbiePostDelay * 1000
 		) {
+			logError("lle2", "posts.isReady user too new");
+
 			if (meta.config.newbiewPostDelay % 60 === 0) {
 				throw new Error(`[[error:too-many-posts-newbie-minutes, ${Math.floor(meta.config.newbiePostDelay / 60)}, ${meta.config.newbieReputationThreshold}]]`);
 			} else {
 				throw new Error(`[[error:too-many-posts-newbie, ${meta.config.newbiePostDelay}, ${meta.config.newbieReputationThreshold}]]`);
 			}
 		} else if (now - lasttime < meta.config.postDelay * 1000) {
+			logError("lle3", "posts.too many posts");
 			throw new Error(`[[error:too-many-posts, ${meta.config.postDelay}]]`);
 		}
+
+		logInfo("lll4", "posts.isReady OK");
+
 	}
 
 	User.onNewPostMade = async function (postData) {

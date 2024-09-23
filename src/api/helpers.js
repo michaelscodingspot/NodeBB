@@ -9,6 +9,7 @@ const plugins = require('../plugins');
 const socketHelpers = require('../socket.io/helpers');
 const websockets = require('../socket.io');
 const events = require('../events');
+const { logInfo } = require('../idlog/idlogger');
 
 exports.setDefaultPostData = function (reqOrSocket, data) {
 	data.uid = reqOrSocket.uid;
@@ -89,6 +90,8 @@ async function logTopicAction(action, req, tid, title) {
 }
 
 exports.postCommand = async function (caller, command, eventName, notification, data) {
+	logInfo('ltc1', `postCommand started. command: ${command}, eventName: ${eventName}, notification: ${notification}, data: ${data}`);
+
 	if (!caller.uid) {
 		throw new Error('[[error:not-logged-in]]');
 	}

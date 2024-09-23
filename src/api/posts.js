@@ -1,3 +1,4 @@
+/* eslint-disable linebreak-style */
 'use strict';
 
 const validator = require('validator');
@@ -17,6 +18,7 @@ const privileges = require('../privileges');
 const apiHelpers = require('./helpers');
 const websockets = require('../socket.io');
 const socketHelpers = require('../socket.io/helpers');
+const { logInfo } = require('../idlog/idlogger');
 
 const postsAPI = module.exports;
 
@@ -309,6 +311,8 @@ postsAPI.unvote = async function (caller, data) {
 };
 
 postsAPI.getVoters = async function (caller, data) {
+	logInfo('ltp1', `Posts.getVoters started. pid: ${data.pid}`);
+
 	if (!data || !data.pid) {
 		throw new Error('[[error:invalid-data]]');
 	}
@@ -346,6 +350,8 @@ postsAPI.getVoters = async function (caller, data) {
 };
 
 postsAPI.getUpvoters = async function (caller, data) {
+	logInfo('ltp2', `Posts.getUpvoters started. pid: ${data.pid}`);
+
 	if (!data.pid) {
 		throw new Error('[[error:invalid-data]]');
 	}
