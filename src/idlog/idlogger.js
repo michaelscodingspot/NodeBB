@@ -50,7 +50,7 @@ SELECT * FROM (
 		});
 }
 
-function log(logId, level, message) {
+function log(logId, level, message, sessionID) {
 	console.log('logId=', logId, 'level=', level, 'message=', message);
 	if (!initialized) {
 		initialized = true;
@@ -60,17 +60,48 @@ function log(logId, level, message) {
 	}
 
     const date = new Date().toISOString().replace('T', ' ').replace('Z', '');
-    logQueue.push({date, logId, level, message, sessionId: '000', correlationId: '000'});
+    logQueue.push({date, logId, level, message, sessionId: sessionID, correlationId: '000'});
 }
 
-exports.logInfo = (logId, message) => {
-	log(logId, "Info", message);
+exports.logInfo = (logId, message, sessionID = "000") => {
+	log(logId, "Info", message, sessionID);
 }
 
-exports.logWarn = (logId, message) => {
+exports.logWarn = (logId, message, sessionID = "000") => {
 	log(logId, "Warn", message);
 }
 
-exports.logError = (logId, message) => {
+exports.logError = (logId, message, sessionID = "000") => {
 	log(logId, "Error", message);
 }
+
+exports.stringifyTwoLevels= (obj) => {
+	const maxDepth = 4;
+
+  // Helper function to recursively walk through the object and track depth
+  function recurse(currentObj, currentDepth) {
+    if (currentDepth > maxDepth) {
+      return '[Object]'; // If we've exceeded max depth, replace with placeholder
+    }
+
+    if (typeof currentObj === 'object' && currentObj !== null) {
+      // If currentObj is an array, treat it as an array; otherwise, treat it as an object
+      const result = Array.isArray(currentObj) ? [] : {};
+      
+      for (let key in currentObj) {
+        if (Object.prototype.hasOwnProperty.call(currentObj, key)) {
+          result[key] = recurse(currentObj[key], currentDepth + 1);
+        }
+      }
+      return result;
+    }
+
+    return currentObj; // Return the value for non-objects
+  }
+
+  // Start recursion from depth 1
+  const limitedObj = recurse(obj, 1);
+
+  // Stringify the resulting object limited to two levels deep
+  return JSON.stringify(limitedObj, null, 2); // Optional pretty print with 2 spaces
+  }

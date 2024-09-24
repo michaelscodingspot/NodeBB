@@ -15,6 +15,7 @@ const helpers = require('./helpers');
 const utils = require('../utils');
 const translator = require('../translator');
 const analytics = require('../analytics');
+const { logInfo } = require('../idlog/idlogger');
 
 const categoryController = module.exports;
 
@@ -25,6 +26,7 @@ const validSorts = [
 ];
 
 categoryController.get = async function (req, res, next) {
+	logInfo("ccc1", "categoryController.get started");
 	const cid = req.params.category_id;
 
 	let currentPage = parseInt(req.query.page, 10) || 1;
