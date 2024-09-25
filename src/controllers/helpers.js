@@ -14,6 +14,7 @@ const plugins = require('../plugins');
 const meta = require('../meta');
 const middlewareHelpers = require('../middleware/helpers');
 const utils = require('../utils');
+const { logError } = require('../idlog/idlogger');
 
 const helpers = module.exports;
 
@@ -507,17 +508,19 @@ helpers.formatApiResponse = async (statusCode, res, payload) => {
 		const returnPayload = await helpers.generateError(statusCode, message, res);
 		returnPayload.response = response;
 
-		if (global.env === 'development') {
-			returnPayload.stack = payload.stack;
-			process.stdout.write(`[${chalk.yellow('api')}] Exception caught, error with stack trace follows:\n`);
-			process.stdout.write(payload.stack);
-		}
+		returnPayload.stack = payload.stack;
+
+		logError(`e1rr`, `[api] Exception caught. message=${message} statusCode=${statusCode} stack:\n${payload.stack}`, res.req);
+			// process.stdout.write(`[${chalk.yellow('api')}] Exception caught, error with stack trace follows:\n`);
+			// process.stdout.write(payload.stack);
+		
 		res.status(statusCode).json(returnPayload);
 	} else {
 		// Non-2xx statusCode, generate predefined error
 		const message = payload ? String(payload) : null;
 		const returnPayload = await helpers.generateError(statusCode, message, res);
 		res.status(statusCode).json(returnPayload);
+		logError(`e2rr`, `[api] Error. message=${message} statusCode=${statusCode}`, res.req);
 	}
 };
 

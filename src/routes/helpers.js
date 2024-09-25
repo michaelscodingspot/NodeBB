@@ -84,7 +84,7 @@ helpers.tryRoute = function (controller, handler) {
 			try {
 				await controller(req, res, next);
 			} catch (err) {
-				logError('ttc1', `Error: ${err.message} at ${err.stack}`, req);
+				// logError('ttc1', `Error: ${err.message} at ${err.stack}`, req);
 				if (handler) {
 					return handler(err, res);
 				}
