@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 'use strict';
 
 const nconf = require('nconf');
@@ -8,12 +9,13 @@ const meta = require('../meta');
 const pagination = require('../pagination');
 const helpers = require('./helpers');
 const privileges = require('../privileges');
-const { logInfo, stringifyTwoLevels } = require('../idlog/idlogger');
+const { logInfo/*, stringifyTwoLevels*/ } = require('../idlog/idlogger');
 
 const categoriesController = module.exports;
 
 categoriesController.list = async function (req, res) {
-	logInfo("ccd1", "categoriesController.list started. req: " + stringifyTwoLevels(req) + " res: " + stringifyTwoLevels(res), req.sessionID);
+	// logInfo("ccd1", "categoriesController.list started. req: " + stringifyTwoLevels(req) + " res: " + stringifyTwoLevels(res), req.sessionID);
+	logInfo('ccd1', 'categoriesController.list started.', req);
 	res.locals.metaTags = [{
 		name: 'title',
 		content: String(meta.config.title || 'NodeBB'),

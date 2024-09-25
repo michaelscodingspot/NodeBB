@@ -18,6 +18,8 @@ const privileges = require('../privileges');
 const cacheCreate = require('../cache/lru');
 const helpers = require('./helpers');
 const api = require('../api');
+const { logInfo } = require('../idlog/idlogger');
+
 
 const controllers = {
 	api: require('../controllers/api'),
@@ -77,6 +79,38 @@ middleware.stripLeadingSlashes = function stripLeadingSlashes(req, res, next) {
 	next();
 };
 
+middleware.generateRequestId = helpers.try(async (req, res, next) => {
+	req.requestID = req.requestID || generateRequestID();
+	next();
+});
+
+middleware.logPageRoute = helpers.try(async (req, res, next) => {
+	const data = {
+		type: "PageRouteStarted",
+		url: req.url,
+		method: req.method,
+		loggedIn: req.loggedIn,
+		isAuthenticated: req.isAuthenticated,
+		ip: req.ip,
+		uid: req.uid,
+		query: JSON.stringify(req.query),
+	};
+	logInfo('lpr2', JSON.stringify(data), req);
+	next();
+});
+
+middleware.logApiRoute = helpers.try(async (req, res, next) => {
+	const data = {
+		type: "ApiRouteStarted",
+		url: req.url,
+		originalUrl: req.originalUrl,
+		query: req.query,
+		ip: req.ip,
+	};
+	logInfo('lpr3', JSON.stringify(data), req);
+	next();
+});
+
 middleware.pageView = helpers.try(async (req, res, next) => {
 	if (req.loggedIn) {
 		await Promise.all([
@@ -85,7 +119,7 @@ middleware.pageView = helpers.try(async (req, res, next) => {
 		]);
 	}
 	next();
-	await analytics.pageView({ ip: req.ip, uid: req.uid });
+	await analytics.pageView(req);
 	plugins.hooks.fire('action:middleware.pageView', { req: req });
 });
 
@@ -297,3 +331,7 @@ middleware.handleMultipart = (req, res, next) => {
 
 	multipartMiddleware(req, res, next);
 };
+
+function generateRequestID() {
+	return Math.random().toString(36).substring(2) + Date.now().toString(36);
+}

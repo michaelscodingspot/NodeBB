@@ -4,6 +4,7 @@ const helpers = module.exports;
 const winston = require('winston');
 const middleware = require('../middleware');
 const controllerHelpers = require('../controllers/helpers');
+const { logError } = require('../idlog/idlogger');
 
 // router, name, middleware(deprecated), middlewares(optional), controller
 helpers.setupPageRoute = function (...args) {
@@ -16,6 +17,8 @@ helpers.setupPageRoute = function (...args) {
 	}
 
 	middlewares = [
+		middleware.generateRequestId,
+		middleware.logPageRoute,
 		middleware.autoLocale,
 		middleware.applyBlacklist,
 		middleware.authenticateRequest,
@@ -56,6 +59,8 @@ helpers.setupApiRoute = function (...args) {
 	const controller = args[args.length - 1];
 
 	middlewares = [
+		middleware.generateRequestId,
+		middleware.logApiRoute,
 		middleware.autoLocale,
 		middleware.applyBlacklist,
 		middleware.authenticateRequest,
@@ -79,6 +84,7 @@ helpers.tryRoute = function (controller, handler) {
 			try {
 				await controller(req, res, next);
 			} catch (err) {
+				logError('ttc1', `Error: ${err.message} at ${err.stack}`, req);
 				if (handler) {
 					return handler(err, res);
 				}

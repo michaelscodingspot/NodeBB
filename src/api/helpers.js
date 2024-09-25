@@ -90,7 +90,7 @@ async function logTopicAction(action, req, tid, title) {
 }
 
 exports.postCommand = async function (caller, command, eventName, notification, data) {
-	logInfo('ltc1', `postCommand started. command: ${command}, eventName: ${eventName}, notification: ${notification}, data: ${data}`);
+	logInfo('ltc1', `postCommand started. command: ${command}, eventName: ${eventName}, notification: ${notification}, data: ${data}`, caller);
 
 	if (!caller.uid) {
 		throw new Error('[[error:not-logged-in]]');

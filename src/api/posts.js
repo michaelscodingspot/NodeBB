@@ -311,7 +311,7 @@ postsAPI.unvote = async function (caller, data) {
 };
 
 postsAPI.getVoters = async function (caller, data) {
-	logInfo('ltp1', `Posts.getVoters started. pid: ${data.pid}`);
+	logInfo('ltp1', `Posts.getVoters started. pid: ${data.pid}`, caller);
 
 	if (!data || !data.pid) {
 		throw new Error('[[error:invalid-data]]');
@@ -350,7 +350,7 @@ postsAPI.getVoters = async function (caller, data) {
 };
 
 postsAPI.getUpvoters = async function (caller, data) {
-	logInfo('ltp2', `Posts.getUpvoters started. pid: ${data.pid}`);
+	logInfo('ltp2', `Posts.getUpvoters started. pid: ${data.pid}`, caller);
 
 	if (!data.pid) {
 		throw new Error('[[error:invalid-data]]');

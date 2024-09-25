@@ -15,6 +15,7 @@ const plugins = require('./plugins');
 const meta = require('./meta');
 const pubsub = require('./pubsub');
 const cacheCreate = require('./cache/lru');
+const { logInfo } = require('./idlog/idlogger');
 
 const Analytics = module.exports;
 
@@ -92,23 +93,23 @@ Analytics.increment = function (keys, callback) {
 
 Analytics.getKeys = async () => db.getSortedSetRange('analyticsKeys', 0, -1);
 
-Analytics.pageView = async function (payload) {
+Analytics.pageView = async function (req) {
 	local.pageViews += 1;
 
-	if (payload.uid > 0) {
+	if (req.uid > 0) {
 		local.pageViewsRegistered += 1;
-	} else if (payload.uid < 0) {
+	} else if (req.uid < 0) {
 		local.pageViewsBot += 1;
 	} else {
 		local.pageViewsGuest += 1;
 	}
 
-	if (payload.ip) {
+	if (req.ip) {
 		// Retrieve hash or calculate if not present
-		let hash = ipCache.get(payload.ip + secret);
+		let hash = ipCache.get(req.ip + secret);
 		if (!hash) {
-			hash = crypto.createHash('sha1').update(payload.ip + secret).digest('hex');
-			ipCache.set(payload.ip + secret, hash);
+			hash = crypto.createHash('sha1').update(req.ip + secret).digest('hex');
+			ipCache.set(req.ip + secret, hash);
 		}
 
 		const score = await db.sortedSetScore('ip:recent', hash);
@@ -122,6 +123,8 @@ Analytics.pageView = async function (payload) {
 			await db.sortedSetAdd('ip:recent', Date.now(), hash);
 		}
 	}
+
+	logInfo('aaa1', `Analytics.pageView uid=${req.uid} url=${req.originalUrl} stats=${JSON.stringify(local)}`, req);
 };
 
 Analytics.writeData = async function () {

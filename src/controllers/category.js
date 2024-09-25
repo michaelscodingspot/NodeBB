@@ -26,7 +26,7 @@ const validSorts = [
 ];
 
 categoryController.get = async function (req, res, next) {
-	logInfo("ccc1", "categoryController.get started");
+	logInfo("ccc1", "categoryController.get started", req);
 	const cid = req.params.category_id;
 
 	let currentPage = parseInt(req.query.page, 10) || 1;

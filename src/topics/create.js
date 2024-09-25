@@ -230,7 +230,7 @@ module.exports = function (Topics) {
 	};
 
 	async function onNewPost(postData, data) {
-		logInfo('ltr2', 'Topics.onNewPost started. ');
+		logInfo('ltr2', 'Topics.onNewPost started. ', data.req);
 
 		const { tid, uid } = postData;
 		await Topics.markAsRead([tid], uid);
@@ -261,7 +261,7 @@ module.exports = function (Topics) {
 		postData.timestampISO = utils.toISOString(postData.timestamp);
 		postData.topic.title = String(postData.topic.title);
 
-		logInfo('ltr3', `Topics.onNewPost. postData: ${JSON.stringify(postData)}`);
+		logInfo('ltr3', `Topics.onNewPost finished. ${JSON.stringify(postData)}`, data.req);
 
 		return postData;
 	}
