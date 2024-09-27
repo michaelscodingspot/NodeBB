@@ -3,11 +3,16 @@
 // const axios = require('axios');
 
 // Define the Druid SQL endpoint
-const DRUID_SQL_ENDPOINT = 'http://localhost:8888/druid/v2/sql/task';
-
+const DRUID_SQL_ENDPOINT_LOCAL = 'http://localhost:8888/druid/v2/sql/task';
+const DRUID_SQL_ENDPOINT_SANDBOX = 'http://142.93.105.195:8888/druid/v2/sql/task';
+const DRUID_DATA_SOURCE_LOCAL = 'my_express1';
+const DRUID_DATA_SOURCE_SANDBOX = 'Logs';
+const isSandbox = true; // false means local
+const druidSqlEndpoint = isSandbox ? DRUID_SQL_ENDPOINT_SANDBOX : DRUID_SQL_ENDPOINT_LOCAL;
+const druidDataSource = isSandbox ? DRUID_DATA_SOURCE_SANDBOX : DRUID_DATA_SOURCE_LOCAL;
 
 const logQueue = [];
-const initialized = false;
+var initialized = false;
 
 const LOG_INTERVAL = 12000;
 function logBatch() {
@@ -20,7 +25,7 @@ function logBatch() {
 
 	const values = logQueue.map(log => `(TIMESTAMP '${log.date}', '${log.logId}', '${log.level}', '${log.message}', '${log.sessionId}', '${log.correlationId}')`).join(', ');
 	const sqlQuery =
-`INSERT INTO my_express1
+`INSERT INTO ${druidDataSource}
 SELECT * FROM (
     VALUES
     ${values}
@@ -30,7 +35,7 @@ SELECT * FROM (
 	logQueue.length = 0;
 	console.log('sqlQuery=', sqlQuery);
 
-	fetch(DRUID_SQL_ENDPOINT, {
+	fetch(druidSqlEndpoint, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
@@ -51,15 +56,15 @@ SELECT * FROM (
 
 function log(logId, level, message, sessionID, requestID) {
 	console.log(`---- logId=${logId} level=${level} message=${message} sessionID=${sessionID} requestID=${requestID}`);
-	// if (!initialized) {
-	//  initialized = true;
-	//  setTimeout(() => {
-	// logBatch();
-	//  }, 5000);
-	// }
+	if (!initialized) {
+	 initialized = true;
+	 setTimeout(() => {
+	logBatch();
+	 }, 5000);
+	}
 
-	//   const date = new Date().toISOString().replace('T', ' ').replace('Z', '');
-	//   logQueue.push({date, logId, level, message, sessionId: sessionID, correlationId: requestID});
+	const date = new Date().toISOString().replace('T', ' ').replace('Z', '');
+	logQueue.push({date, logId, level, message, sessionId: sessionID, correlationId: requestID});
 }
 
 exports.logInfo = (logId, message, req = undefined) => {
