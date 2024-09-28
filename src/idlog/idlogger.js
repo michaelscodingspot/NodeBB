@@ -4,11 +4,14 @@
 
 // Define the Druid SQL endpoint
 const DRUID_SQL_ENDPOINT_LOCAL = 'http://localhost:8888/druid/v2/sql/task';
-const DRUID_SQL_ENDPOINT_SANDBOX = 'http://142.93.105.195:8888/druid/v2/sql/task';
+//const DRUID_SQL_ENDPOINT_SANDBOX = 'http://142.93.105.195:8888/druid/v2/sql/task';
+//https://idlogio.app.imply.io/4227072b-838e-47a2-ad42-a1ac77aa177c/home/recent
+const POLARIS_ENDPOINT_SANDOX = 'https://idlogio.eu-central-1.aws.api.imply.io/v1/projects/4227072b-838e-47a2-ad42-a1ac77aa177c/jobs';
+const POLARIS_API_KEY='pok_Ay2rbiqWriOY5ZwD1vYB688GSYQF5Jh4Gdu1ZWoCfoo9WejP8pOcUMu3qU9tl6nfuQ';
 const DRUID_DATA_SOURCE_LOCAL = 'my_express1';
 const DRUID_DATA_SOURCE_SANDBOX = 'Logs';
 const isSandbox = true; // false means local
-const druidSqlEndpoint = isSandbox ? DRUID_SQL_ENDPOINT_SANDBOX : DRUID_SQL_ENDPOINT_LOCAL;
+const druidSqlEndpoint = isSandbox ? POLARIS_ENDPOINT_SANDOX : DRUID_SQL_ENDPOINT_LOCAL;
 const druidDataSource = isSandbox ? DRUID_DATA_SOURCE_SANDBOX : DRUID_DATA_SOURCE_LOCAL;
 
 const logQueue = [];
@@ -39,8 +42,13 @@ SELECT * FROM (
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
+			'Authorization': `Basic ${POLARIS_API_KEY}`
 		},
-		body: JSON.stringify({ query: sqlQuery }),
+		body: JSON.stringify({ 
+			type: "sql",
+			createTableIfNotExists: true,
+			query: sqlQuery 
+		}),
 	})
 		.then((response) => {
 			console.log('Insert success:', response);
