@@ -85,14 +85,14 @@ middleware.generateRequestId = helpers.try(async (req, res, next) => {
 });
 
 middleware.logPageRoute = helpers.try(async (req, res, next) => {
-	logInfo('lpr2',
+	logInfo('rpag',
 		`PageRouteStarted: url=${req.url} method=${req.method} userLoggedIn=${req.loggedIn}	ip=${req.ip} uid=${req.uid} query=${JSON.stringify(req.query)}`
 		, req);
 	next();
 });
 
 middleware.logApiRoute = helpers.try(async (req, res, next) => {
-	logInfo('lpr3', `ApiRouteStarted: url=${req.url} originalUrl=${req.originalUrl}	query=${req.query} ip=${req.ip}`, req);
+	logInfo('rapi', `ApiRouteStarted: url=${req.url} originalUrl=${req.originalUrl}	query=${req.query} ip=${req.ip}`, req);
 	next();
 });
 
