@@ -1,21 +1,20 @@
 'use strict';
 
-// const axios = require('axios');
+const os = require('os');
 
 // Define the Druid SQL endpoint
 const DRUID_SQL_ENDPOINT_LOCAL = 'http://localhost:8888/druid/v2/sql/task';
-//const DRUID_SQL_ENDPOINT_SANDBOX = 'http://142.93.105.195:8888/druid/v2/sql/task';
-//https://idlogio.app.imply.io/4227072b-838e-47a2-ad42-a1ac77aa177c/home/recent
+//const DIGITAL_OCEAN_DRUID_SQL_ENDPOINT_SANDBOX = 'http://142.93.105.195:8888/druid/v2/sql/task';
 const POLARIS_ENDPOINT_SANDOX = 'https://idlogio.eu-central-1.aws.api.imply.io/v1/projects/4227072b-838e-47a2-ad42-a1ac77aa177c/jobs';
 const POLARIS_API_KEY='pok_Ay2rbiqWriOY5ZwD1vYB688GSYQF5Jh4Gdu1ZWoCfoo9WejP8pOcUMu3qU9tl6nfuQ';
-const DRUID_DATA_SOURCE_LOCAL = 'my_express1';
-const DRUID_DATA_SOURCE_SANDBOX = 'Logs';
 const isSandbox = true; // false means local
+var initialized = false;
+var fromLocal;
+
+
 const druidSqlEndpoint = isSandbox ? POLARIS_ENDPOINT_SANDOX : DRUID_SQL_ENDPOINT_LOCAL;
-const druidDataSource = isSandbox ? DRUID_DATA_SOURCE_SANDBOX : DRUID_DATA_SOURCE_LOCAL;
 
 const logQueue = [];
-var initialized = false;
 
 const LOG_INTERVAL = 12000;
 function logBatch() {
@@ -26,9 +25,10 @@ function logBatch() {
 		return;
 	}
 
+	const druidTableName = isSandbox ? (fromLocal ? "LogsLocal" : "Logs") : 'my_express1';
 	const values = logQueue.map(log => `(TIMESTAMP '${log.date}', '${log.logId}', '${log.level}', '${log.message}', '${log.sessionId}', '${log.correlationId}')`).join(', ');
 	const sqlQuery =
-`INSERT INTO ${druidDataSource}
+`INSERT INTO ${druidTableName}
 SELECT * FROM (
     VALUES
     ${values}
@@ -64,14 +64,19 @@ SELECT * FROM (
 
 function log(logId, level, message, sessionID, requestID) {
 	console.log(`---- logId=${logId} level=${level} message=${message} sessionID=${sessionID} requestID=${requestID}`);
+	const date = new Date().toISOString().replace('T', ' ').replace('Z', '');
 	if (!initialized) {
-	 initialized = true;
-	 setTimeout(() => {
-	logBatch();
-	 }, 5000);
+		initialized = true;
+		const localIPAddress = getLocalIPAddress();
+		fromLocal = localIPAddress.startsWith("10.");
+		console.log("fromLocal=" + fromLocal)
+		logQueue.push({ date, logId: "init", level: "Info", message: `idlogger initialized. local machine=${fromLocal}`, sessionId: sessionID, correlationId: requestID });
+
+		setTimeout(() => {
+			logBatch();
+		}, 5000);
 	}
 
-	const date = new Date().toISOString().replace('T', ' ').replace('Z', '');
 	logQueue.push({date, logId, level, message, sessionId: sessionID, correlationId: requestID});
 }
 
@@ -117,3 +122,21 @@ exports.stringifyTwoLevels = (obj) => {
 	// Stringify the resulting object limited to two levels deep
 	return JSON.stringify(limitedObj, null, 2); // Optional pretty print with 2 spaces
 };
+
+function getLocalIPAddress() {
+	const networkInterfaces = os.networkInterfaces();
+	
+	for (const interfaceName in networkInterfaces) {
+	  const interfaces = networkInterfaces[interfaceName];
+	  
+	  for (const iface of interfaces) {
+		if (iface.family === 'IPv4' && !iface.internal) {
+		  return iface.address;
+		}
+	  }
+	}
+	
+	return 'IP address not found';
+  }
+
+  

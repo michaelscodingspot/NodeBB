@@ -85,29 +85,14 @@ middleware.generateRequestId = helpers.try(async (req, res, next) => {
 });
 
 middleware.logPageRoute = helpers.try(async (req, res, next) => {
-	const data = {
-		type: "PageRouteStarted",
-		url: req.url,
-		method: req.method,
-		loggedIn: req.loggedIn,
-		isAuthenticated: req.isAuthenticated,
-		ip: req.ip,
-		uid: req.uid,
-		query: JSON.stringify(req.query),
-	};
-	logInfo('lpr2', JSON.stringify(data), req);
+	logInfo('lpr2',
+		`PageRouteStarted: url=${req.url} method=${req.method} userLoggedIn=${req.loggedIn}	ip=${req.ip} uid=${req.uid} query=${JSON.stringify(req.query)}`
+		, req);
 	next();
 });
 
 middleware.logApiRoute = helpers.try(async (req, res, next) => {
-	const data = {
-		type: "ApiRouteStarted",
-		url: req.url,
-		originalUrl: req.originalUrl,
-		query: req.query,
-		ip: req.ip,
-	};
-	logInfo('lpr3', JSON.stringify(data), req);
+	logInfo('lpr3', `ApiRouteStarted: url=${req.url} originalUrl=${req.originalUrl}	query=${req.query} ip=${req.ip}`, req);
 	next();
 });
 
