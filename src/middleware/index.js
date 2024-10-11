@@ -91,12 +91,6 @@ middleware.logPageRoute = helpers.try(async (req, res, next) => {
 	next();
 });
 
-middleware.logApiRoute = helpers.try(async (req, res, next) => {
-	
-	logInfo('rapi', `ApiRouteStarted: url=${req.url} originalUrl=${req.originalUrl}	query=${req.query} ip=${req.ip}`, req);
-	next();
-});
-
 middleware.pageView = helpers.try(async (req, res, next) => {
 	if (req.loggedIn) {
 		await Promise.all([
