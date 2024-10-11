@@ -522,7 +522,7 @@ helpers.formatApiResponse = async (statusCode, res, payload) => {
 		res.status(statusCode).json(returnPayload);
 		logError(`e2rr`, `[api] Error. statusCode=${statusCode} method=${res.req.method} url=${res.req.originalUrl} status=${JSON.stringify(returnPayload.status)}`, res.req);
 	}
-};
+}; 
 
 async function generateBannedResponse(res) {
 	const response = {};

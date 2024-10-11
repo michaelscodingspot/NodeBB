@@ -148,8 +148,10 @@ middleware.prepareAPI = function prepareAPI(req, res, next) {
 };
 
 middleware.logApiUsage = async function logApiUsage(req, res, next) {
+	logInfo('rapi', `ApiRouteStarted: url=${req.url} originalUrl=${req.originalUrl}	query=${req.query} ip=${req.ip}`, req);
 	const userName = await user.getUsernamesByUids([req.uid]);
 	logInfo('usr2', `logApiUsage: uid=${req.uid} username=${userName}`, req);
+	
 	if (req.headers.hasOwnProperty('authorization')) {
 		const [, token] = req.headers.authorization.split(' ');
 		await api.utils.tokens.log(token);

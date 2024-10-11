@@ -60,7 +60,6 @@ helpers.setupApiRoute = function (...args) {
 
 	middlewares = [
 		middleware.generateRequestId,
-		middleware.logApiRoute,
 		middleware.autoLocale,
 		middleware.applyBlacklist,
 		middleware.authenticateRequest,
