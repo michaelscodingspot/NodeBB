@@ -36,7 +36,7 @@ SELECT * FROM (
     PARTITIONED BY DAY`;
 
 	logQueue.length = 0;
-	console.log('sqlQuery=', sqlQuery);
+	// console.log('sqlQuery=', sqlQuery);
 
 	fetch(druidSqlEndpoint, {
 		method: 'POST',
@@ -51,7 +51,7 @@ SELECT * FROM (
 		}),
 	})
 		.then((response) => {
-			console.log('Insert success:', response);
+			// console.log('Insert success:', response);
 		}).catch((error) => {
 			console.error('Error inserting data:', error.response ? error.response.data : error.message);
 		}).finally(() => {
