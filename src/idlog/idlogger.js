@@ -3,10 +3,14 @@
 const os = require('os');
 
 // Define the Druid SQL endpoint
-const DRUID_SQL_ENDPOINT_LOCAL = 'http://localhost:8888/druid/v2/sql/task';
 //const DIGITAL_OCEAN_DRUID_SQL_ENDPOINT_SANDBOX = 'http://142.93.105.195:8888/druid/v2/sql/task';
+const DRUID_SQL_ENDPOINT_LOCAL = 'http://localhost:8888/druid/v2/sql/task';
 const POLARIS_ENDPOINT_SANDOX = 'https://idlogio.eu-central-1.aws.api.imply.io/v1/projects/4227072b-838e-47a2-ad42-a1ac77aa177c/jobs';
 const POLARIS_API_KEY='pok_Ay2rbiqWriOY5ZwD1vYB688GSYQF5Jh4Gdu1ZWoCfoo9WejP8pOcUMu3qU9tl6nfuQ';
+
+const CLICK_HOUSE_URL = 'https://rq5fzdb7yv.eu-central-1.aws.clickhouse.cloud:8443';
+const CLICK_HOUSE_CREDENTIALS='default:.2HwcLA8cNfKO';
+
 const isSandbox = true; // false means local
 var initialized = false;
 var fromLocal;
@@ -16,7 +20,7 @@ const druidSqlEndpoint = isSandbox ? POLARIS_ENDPOINT_SANDOX : DRUID_SQL_ENDPOIN
 
 const logQueue = [];
 
-const LOG_INTERVAL = 12000;
+const LOG_INTERVAL = 1000;
 function logBatch() {
 	if (logQueue.length === 0) {
 		setTimeout(() => {
@@ -25,33 +29,55 @@ function logBatch() {
 		return;
 	}
 
-	const druidTableName = isSandbox ? (fromLocal ? "LogsLocal" : "Logs") : 'my_express1';
-	const values = logQueue.map(log => `(TIMESTAMP '${log.date}', '${log.logId}', '${log.level}', '${log.message}', '${log.sessionId}', '${log.correlationId}')`).join(', ');
-	const sqlQuery =
-`INSERT INTO ${druidTableName}
-SELECT * FROM (
-    VALUES
-    ${values}
-) AS t (__time, LogId, Level, Message, SessionId, CorrelationId)
-    PARTITIONED BY DAY`;
+	const tableName = isSandbox ? (fromLocal ? "LogsLocal" : "Logs") : 'my_express1';
+	// const valuesDruid = logQueue.map(log => `(TIMESTAMP '${log.date}', '${log.logId}', '${log.level}', '${log.message}', '${log.sessionId}', '${log.correlationId}')`).join(', ');
+	const valuesCH = logQueue.map(log => `('${log.date}','${log.level}','${log.logId}','${log.message}','${log.correlationId}','${log.sessionId}')`).join(',');
+// 	const sqlQueryDruid =
+// `INSERT INTO ${tableName}
+// SELECT * FROM (
+//     VALUES
+//     ${values}
+// ) AS t (__time, LogId, Level, Message, SessionId, CorrelationId)
+//     PARTITIONED BY DAY`;
+	const sqlQueryClickHouse = `INSERT INTO ${tableName} (Time, Level, LogId, Message,  CorrelationId, SessionId) VALUES ${valuesCH}`;
 
 	logQueue.length = 0;
-	// console.log('sqlQuery=', sqlQuery);
+	console.log('sqlQuery=', sqlQueryClickHouse);
 
-	fetch(druidSqlEndpoint, {
+	// fetch druid
+	// fetch(druidSqlEndpoint, {
+	// 	method: 'POST',
+	// 	headers: {
+	// 		'Content-Type': 'application/json',
+	// 		'Authorization': `Basic ${POLARIS_API_KEY}`
+	// 	},
+	// 	body: JSON.stringify({ 
+	// 		type: "sql",
+	// 		createTableIfNotExists: true,
+	// 		query: sqlQueryDruid 
+	// 	}),
+	// })
+	// 	.then((response) => {
+	// 		// console.log('Insert success:', response);
+	// 	}).catch((error) => {
+	// 		console.error('Error inserting data:', error.response ? error.response.data : error.message);
+	// 	}).finally(() => {
+	// 		console.log('Finished request');
+	// 		setTimeout(() => {
+	// 			logBatch();
+	// 		}, LOG_INTERVAL);
+	// 	});
+
+	fetch(CLICK_HOUSE_URL, {
 		method: 'POST',
 		headers: {
-			'Content-Type': 'application/json',
-			'Authorization': `Basic ${POLARIS_API_KEY}`
+			'Content-Type': 'text/plain',
+			'Authorization': `Basic ${btoa(CLICK_HOUSE_CREDENTIALS)}`
 		},
-		body: JSON.stringify({ 
-			type: "sql",
-			createTableIfNotExists: true,
-			query: sqlQuery 
-		}),
+		body: sqlQueryClickHouse,
 	})
 		.then((response) => {
-			// console.log('Insert success:', response);
+			console.log('Insert success:', response);
 		}).catch((error) => {
 			console.error('Error inserting data:', error.response ? error.response.data : error.message);
 		}).finally(() => {
