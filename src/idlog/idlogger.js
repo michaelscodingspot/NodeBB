@@ -20,53 +20,28 @@ const druidSqlEndpoint = isSandbox ? POLARIS_ENDPOINT_SANDOX : DRUID_SQL_ENDPOIN
 
 const logQueue = [];
 
-const LOG_INTERVAL = 1000;
+const LOG_INTERVAL_MS = 1000;
 function logBatch() {
 	if (logQueue.length === 0) {
 		setTimeout(() => {
 			logBatch();
-		}, LOG_INTERVAL * 4);
+		}, LOG_INTERVAL_MS * 4);
 		return;
 	}
 
+	const DOS_ATTACK_LIMIT = 1000;
+	if (logQueue.length > DOS_ATTACK_LIMIT) {
+		const length = logQueue.length;
+		logQueue.length = 0;
+		log('dos1', 'Error', `DOS attack detected. Log queue length=${length} higher than ${DOS_ATTACK_LIMIT}`, '', '');
+	}
+
 	const tableName = isSandbox ? (fromLocal ? "LogsLocal" : "Logs") : 'my_express1';
-	// const valuesDruid = logQueue.map(log => `(TIMESTAMP '${log.date}', '${log.logId}', '${log.level}', '${log.message}', '${log.sessionId}', '${log.correlationId}')`).join(', ');
 	const valuesCH = logQueue.map(log => `('${log.date}','${log.level}','${log.logId}','${log.message}','${log.correlationId}','${log.sessionId}')`).join(',');
-// 	const sqlQueryDruid =
-// `INSERT INTO ${tableName}
-// SELECT * FROM (
-//     VALUES
-//     ${values}
-// ) AS t (__time, LogId, Level, Message, SessionId, CorrelationId)
-//     PARTITIONED BY DAY`;
 	const sqlQueryClickHouse = `INSERT INTO ${tableName} (Time, Level, LogId, Message,  CorrelationId, SessionId) VALUES ${valuesCH}`;
 
 	logQueue.length = 0;
 	console.log('sqlQuery=', sqlQueryClickHouse);
-
-	// fetch druid
-	// fetch(druidSqlEndpoint, {
-	// 	method: 'POST',
-	// 	headers: {
-	// 		'Content-Type': 'application/json',
-	// 		'Authorization': `Basic ${POLARIS_API_KEY}`
-	// 	},
-	// 	body: JSON.stringify({ 
-	// 		type: "sql",
-	// 		createTableIfNotExists: true,
-	// 		query: sqlQueryDruid 
-	// 	}),
-	// })
-	// 	.then((response) => {
-	// 		// console.log('Insert success:', response);
-	// 	}).catch((error) => {
-	// 		console.error('Error inserting data:', error.response ? error.response.data : error.message);
-	// 	}).finally(() => {
-	// 		console.log('Finished request');
-	// 		setTimeout(() => {
-	// 			logBatch();
-	// 		}, LOG_INTERVAL);
-	// 	});
 
 	fetch(CLICK_HOUSE_URL, {
 		method: 'POST',
@@ -84,7 +59,7 @@ function logBatch() {
 			console.log('Finished request');
 			setTimeout(() => {
 				logBatch();
-			}, LOG_INTERVAL);
+			}, LOG_INTERVAL_MS);
 		});
 }
 
@@ -100,7 +75,7 @@ function log(logId, level, message, sessionID, requestID) {
 
 		setTimeout(() => {
 			logBatch();
-		}, 5000);
+		}, LOG_INTERVAL_MS * 4);
 	}
 
 	logQueue.push({date, logId, level, message, sessionId: sessionID, correlationId: requestID});
