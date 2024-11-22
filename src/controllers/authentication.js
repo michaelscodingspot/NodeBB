@@ -20,45 +20,11 @@ const helpers = require('./helpers');
 const privileges = require('../privileges');
 const sockets = require('../socket.io');
 const headers = require('../middleware/headers');
+const { initializeLogging } = require('../idlog/idlogger');
 
 const authenticationController = module.exports;
 
-
-winston.configure({
-  level: 'info', // Set the default log level
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json() // Use JSON format for structured logs
-  ),
-  transports: [
-    new winston.transports.Console(), // Log to console
-		new winston.transports.Http({ host: 'localhost', 
-			port: 8000, 
-			path: 'api/v1/ingest', 
-			ssl: false, 
-			format: winston.format(info => ({
-				...info,
-				timestamp: undefined,
-				time: Date.now(),
-				level: {
-					silly: 1,
-					debug: 1,
-					verbose: 2, 
-					info: 3,
-					warn: 4,
-					error: 5,
-					critical: 6,
-				}[info.level] || 3,
-				message: info.message,
-			}))(),
-			level: 'info',
-			headers: {
-				'x-api-key': '0f67a886-7f3b-4d60-a206-9673d584118f',
-			}, 
-		}),
-			
-  ],
-});
+initializeLogging();
 
 async function registerAndLoginUser(req, res, userData) {
 	if (!userData.hasOwnProperty('email')) {

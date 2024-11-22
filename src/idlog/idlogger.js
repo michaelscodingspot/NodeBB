@@ -1,87 +1,67 @@
+/* eslint-disable guard-for-in */
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable linebreak-style */
 'use strict';
 
+const winston = require('winston');
 const os = require('os');
 
-// Define the Druid SQL endpoint
-//const DIGITAL_OCEAN_DRUID_SQL_ENDPOINT_SANDBOX = 'http://142.93.105.195:8888/druid/v2/sql/task';
-const DRUID_SQL_ENDPOINT_LOCAL = 'http://localhost:8888/druid/v2/sql/task';
-const POLARIS_ENDPOINT_SANDOX = 'https://idlogio.eu-central-1.aws.api.imply.io/v1/projects/4227072b-838e-47a2-ad42-a1ac77aa177c/jobs';
-const POLARIS_API_KEY='pok_Ay2rbiqWriOY5ZwD1vYB688GSYQF5Jh4Gdu1ZWoCfoo9WejP8pOcUMu3qU9tl6nfuQ';
-
-const CLICK_HOUSE_URL = 'https://rq5fzdb7yv.eu-central-1.aws.clickhouse.cloud:8443';
-const CLICK_HOUSE_CREDENTIALS='default:.2HwcLA8cNfKO';
-
-const isSandbox = true; // false means local
 var initialized = false;
 var fromLocal;
 
+exports.initializeLogging = () => {
+	initialized = true;
+	fromLocal = isLocal();
 
-const druidSqlEndpoint = isSandbox ? POLARIS_ENDPOINT_SANDOX : DRUID_SQL_ENDPOINT_LOCAL;
-
-const logQueue = [];
-
-const LOG_INTERVAL_MS = 1000;
-function logBatch() {
-	if (logQueue.length === 0) {
-		setTimeout(() => {
-			logBatch();
-		}, LOG_INTERVAL_MS * 4);
-		return;
-	}
-
-	const DOS_ATTACK_LIMIT = 1000;
-	if (logQueue.length > DOS_ATTACK_LIMIT) {
-		const length = logQueue.length;
-		logQueue.length = 0;
-		log('dos1', 'Error', `DOS attack detected. Log queue length=${length} higher than ${DOS_ATTACK_LIMIT}`, '', '');
-	}
-
-	const tableName = isSandbox ? (fromLocal ? "LogsLocal" : "Logs") : 'my_express1';
-	const valuesCH = logQueue.map(log => `('${log.date}','${log.level}','${log.logId}','${log.message}','${log.correlationId}','${log.sessionId}')`).join(',');
-	const sqlQueryClickHouse = `INSERT INTO ${tableName} (Time, Level, LogId, Message,  CorrelationId, SessionId) VALUES ${valuesCH}`;
-
-	logQueue.length = 0;
-	console.log('sqlQuery=', sqlQueryClickHouse);
-
-	fetch(CLICK_HOUSE_URL, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'text/plain',
-			'Authorization': `Basic ${btoa(CLICK_HOUSE_CREDENTIALS)}`
-		},
-		body: sqlQueryClickHouse,
-	})
-		.then((response) => {
-			console.log('Insert success:', response);
-		}).catch((error) => {
-			console.error('Error inserting data:', error.response ? error.response.data : error.message);
-		}).finally(() => {
-			console.log('Finished request');
-			setTimeout(() => {
-				logBatch();
-			}, LOG_INTERVAL_MS);
-		});
-}
+	winston.configure({
+		level: 'info', // Set the default log level
+		transports: [
+			new winston.transports.Console(), // Log to console
+			new winston.transports.Http({ host: fromLocal ? 'localhost' : 'ingest.obics.io',  
+				port: 8000, 
+				path: 'api/v1/ingest', 
+				ssl: !fromLocal, 
+				format: winston.format(info => ({
+					...info,
+					timestamp: undefined,
+					time: Date.now(),
+					level: {
+						silly: 1,
+						debug: 1,
+						verbose: 2, 
+						info: 3,
+						warn: 4,
+						error: 5,
+						critical: 6,
+					}[info.level] || 3,
+					message: info.message,
+				}))(),
+				level: 'info',
+				headers: {
+					'x-api-key': '0f67a886-7f3b-4d60-a206-9673d584118f',
+				}, 
+				batchInterval: 1000,
+				batch: true,
+			}),
+				
+		],
+	});
+	
+};
+	
 
 function log(logId, level, message, sessionID, requestID) {
-	console.log(`---- logId=${logId} level=${level} message=${message} sessionID=${sessionID} requestID=${requestID}`);
-	const date = new Date().toISOString().replace('T', ' ').replace('Z', '');
 	if (!initialized) {
-		initialized = true;
-		const localIPAddress = getLocalIPAddress();
-		fromLocal = localIPAddress.startsWith("10.");
-		console.log("fromLocal=" + fromLocal)
-		logQueue.push({ date, logId: "init", level: "Info", message: `idlogger initialized. local machine=${fromLocal}`, sessionId: sessionID, correlationId: requestID });
-
-		setTimeout(() => {
-			logBatch();
-		}, LOG_INTERVAL_MS * 4);
+		initializeLogging();
 	}
 
-	logQueue.push({date, logId, level, message, sessionId: sessionID, correlationId: requestID});
+	const f = level == 'Error' ? winston.error : level == 'Warn' ? winston.warn : winston.info;
+	sessionID = 'aadert';
+	f(message, { logId, SessionId: sessionID, CorrelationId: requestID });
 }
 
 exports.logInfo = (logId, message, req = undefined) => {
+	
 	log(logId, 'Info', message, req && req.sessionID, req && req.requestID);
 };
 
@@ -106,6 +86,7 @@ exports.stringifyTwoLevels = (obj) => {
 			// If currentObj is an array, treat it as an array; otherwise, treat it as an object
 			const result = Array.isArray(currentObj) ? [] : {};
 
+			// eslint-disable-next-line no-restricted-syntax
 			for (const key in currentObj) {
 				if (Object.prototype.hasOwnProperty.call(currentObj, key)) {
 					result[key] = recurse(currentObj[key], currentDepth + 1);
@@ -124,20 +105,51 @@ exports.stringifyTwoLevels = (obj) => {
 	return JSON.stringify(limitedObj, null, 2); // Optional pretty print with 2 spaces
 };
 
-function getLocalIPAddress() {
-	const networkInterfaces = os.networkInterfaces();
-	
-	for (const interfaceName in networkInterfaces) {
-	  const interfaces = networkInterfaces[interfaceName];
-	  
-	  for (const iface of interfaces) {
-		if (iface.family === 'IPv4' && !iface.internal) {
-		  return iface.address;
-		}
-	  }
-	}
-	
-	return 'IP address not found';
-  }
+function isLocal() {
+	return isLocalIPAddress(getIPAddress());
+}
 
-  
+function getIPAddress() {
+	try {
+		const networkInterfaces = os.networkInterfaces();
+
+		for (const interfaceName in networkInterfaces) {
+			const interfaces = networkInterfaces[interfaceName];
+
+			for (const iface of interfaces) {
+				if (iface.family === 'IPv4' && !iface.internal) {
+					return iface.address;
+				}
+			}
+		}
+	} catch {
+	}
+
+	return 'IP address not found';
+}
+
+function isLocalIPAddress(ip) {
+	// Convert the IP into an array of integers
+	const octets = ip.split('.').map(Number);
+
+	if (octets.length !== 4 || octets.some(octet => isNaN(octet) || octet < 0 || octet > 255)) {
+			return false; // Invalid IP format
+	}
+
+	// Check for private IP ranges
+	const [first, second] = octets;
+
+	return (
+			// 10.0.0.0 - 10.255.255.255
+			first === 10 ||
+
+			// 172.16.0.0 - 172.31.255.255
+			(first === 172 && second >= 16 && second <= 31) ||
+
+			// 192.168.0.0 - 192.168.255.255
+			(first === 192 && second === 168) ||
+
+			// Loopback address (127.0.0.0 - 127.255.255.255)
+			first === 127
+	);
+}
