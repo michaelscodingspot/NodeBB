@@ -19,41 +19,10 @@ const slugify = require('../slugify');
 const helpers = require('./helpers');
 const privileges = require('../privileges');
 const sockets = require('../socket.io');
+const headers = require('../middleware/headers');
 
 const authenticationController = module.exports;
 
-// let logger = null;
-// function getLogger() {
-// 	if (logger) {
-// 		return logger;
-// 	}
-
-
-// 	logger = winston.createLogger({
-// 		level: 'verbose',
-// 		format: winston.format.json(),
-// 		transports: [
-// 			new winston.transports.Console({
-// 				handleExceptions: true,
-// 			}),
-// 			new winston.transports.Http({
-// 				host: 'localhost',
-// 				format: winston.format.json(),
-// 				port: 8000,
-// 				path: 'api/v1/ingest',
-// 				ssl: false, // TODO: change to true for production
-// 				level: 'info',
-// 				batch: false, // Enable batching
-// 				// batchInterval: 1000, // Send logs every 1 seconds
-// 				headers: {
-// 					'x-api-key': '0f67a886-7f3b-4d60-a206-9673d584118f',
-// 					'Content-Type': 'application/json',
-// 				},
-// 			}),
-// 		],
-// 	});
-// 	return logger;
-// }
 
 winston.configure({
   level: 'info', // Set the default log level
@@ -68,6 +37,8 @@ winston.configure({
 			path: 'api/v1/ingest', 
 			ssl: false, 
 			format: winston.format(info => ({
+				...info,
+				timestamp: undefined,
 				time: Date.now(),
 				level: {
 					silly: 1,
@@ -80,10 +51,14 @@ winston.configure({
 				}[info.level] || 3,
 				message: info.message,
 			}))(),
-			level: 'info' }),
+			level: 'info',
+			headers: {
+				'x-api-key': '0f67a886-7f3b-4d60-a206-9673d584118f',
+			}, 
+		}),
+			
   ],
 });
-console.log("===== authenticationController =================================================================================================");
 
 async function registerAndLoginUser(req, res, userData) {
 	if (!userData.hasOwnProperty('email')) {
@@ -300,17 +275,15 @@ authenticationController.login = async (req, res, next) => {
 		winston.error(`[auth/override] Requested login strategy "${strategy}" not found, reverting back to local login strategy.`);
 		strategy = 'local';
 	}
-
-	// winston.loggers.get('category2').info('!!!!! login cat2 !!!!!');
-	// getLogger().info("!!!!! login !!!!!");
-	winston.warn("!!!!! login2-warn !!!!!");
-
+	
+	
 	if (plugins.hooks.hasListeners('action:auth.overrideLogin')) {
 		return continueLogin(strategy, req, res, next);
 	}
-
+	
 	const loginWith = meta.config.allowLoginWith || 'username-email';
 	req.body.username = String(req.body.username).trim();
+	winston.info(`User ${req.body.username} logged in`, { logId: "login" });
 	const errorHandler = res.locals.noScriptErrors || helpers.noScriptErrors;
 	try {
 		await plugins.hooks.fire('filter:login.check', { req: req, res: res, userData: req.body });
