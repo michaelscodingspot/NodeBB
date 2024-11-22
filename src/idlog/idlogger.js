@@ -57,7 +57,7 @@ function log(logId, level, message, sessionID, requestID) {
 
 	const f = level == 'Error' ? winston.error : level == 'Warn' ? winston.warn : winston.info;
 	sessionID = 'aadert';
-	f(message, { logId, SessionId: sessionID, CorrelationId: requestID });
+	f(message, { logId, sessionId: sessionID, correlationId: requestID });
 }
 
 exports.logInfo = (logId, message, req = undefined) => {
