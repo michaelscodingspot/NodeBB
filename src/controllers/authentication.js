@@ -22,48 +22,68 @@ const sockets = require('../socket.io');
 
 const authenticationController = module.exports;
 
-winston.loggers.add('category2', {
-	format: winston.format.json(),
-	transports: [
-		new winston.transports.Http({ host: 'localhost', port: 8000, path: 'api/v1/ingest', ssl: false, level: 'info' }),
-	]
+// let logger = null;
+// function getLogger() {
+// 	if (logger) {
+// 		return logger;
+// 	}
+
+
+// 	logger = winston.createLogger({
+// 		level: 'verbose',
+// 		format: winston.format.json(),
+// 		transports: [
+// 			new winston.transports.Console({
+// 				handleExceptions: true,
+// 			}),
+// 			new winston.transports.Http({
+// 				host: 'localhost',
+// 				format: winston.format.json(),
+// 				port: 8000,
+// 				path: 'api/v1/ingest',
+// 				ssl: false, // TODO: change to true for production
+// 				level: 'info',
+// 				batch: false, // Enable batching
+// 				// batchInterval: 1000, // Send logs every 1 seconds
+// 				headers: {
+// 					'x-api-key': '0f67a886-7f3b-4d60-a206-9673d584118f',
+// 					'Content-Type': 'application/json',
+// 				},
+// 			}),
+// 		],
+// 	});
+// 	return logger;
+// }
+
+winston.configure({
+  level: 'info', // Set the default log level
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json() // Use JSON format for structured logs
+  ),
+  transports: [
+    new winston.transports.Console(), // Log to console
+		new winston.transports.Http({ host: 'localhost', 
+			port: 8000, 
+			path: 'api/v1/ingest', 
+			ssl: false, 
+			format: winston.format(info => ({
+				time: Date.now(),
+				level: {
+					silly: 1,
+					debug: 1,
+					verbose: 2, 
+					info: 3,
+					warn: 4,
+					error: 5,
+					critical: 6,
+				}[info.level] || 3,
+				message: info.message,
+			}))(),
+			level: 'info' }),
+  ],
 });
-let logger = null;
-function getLogger() {
-	if (logger) {
-		return logger;
-	}
-
-
-	logger = winston.createLogger({
-		level: 'verbose',
-		format: winston.format.json(),
-		transports: [
-			new winston.transports.Console({
-				handleExceptions: true,
-			}),
-			// new winston.transports.File({
-			// filename: 'logs/webinstall.log',
-			// handleExceptions: true,
-			// }),
-			new winston.transports.Http({
-				host: 'http://localhost',
-				format: winston.format.json(),
-				port: 8000,
-				path: 'api/v1/ingest',
-				ssl: false, // TODO: change to true for production
-				level: 'info',
-				batch: false, // Enable batching
-				// batchInterval: 1000, // Send logs every 1 seconds
-				headers: {
-					'x-api-key': '0f67a886-7f3b-4d60-a206-9673d584118f',
-					'Content-Type': 'application/json',
-				},
-			}),
-		],
-	});
-	return logger;
-}
+console.log("===== authenticationController =================================================================================================");
 
 async function registerAndLoginUser(req, res, userData) {
 	if (!userData.hasOwnProperty('email')) {
@@ -281,9 +301,9 @@ authenticationController.login = async (req, res, next) => {
 		strategy = 'local';
 	}
 
-	winston.loggers.get('category2').info('!!!!! login cat2 !!!!!');
-	getLogger().info("!!!!! login !!!!!");
-	console.log("===== login ====");
+	// winston.loggers.get('category2').info('!!!!! login cat2 !!!!!');
+	// getLogger().info("!!!!! login !!!!!");
+	winston.warn("!!!!! login2-warn !!!!!");
 
 	if (plugins.hooks.hasListeners('action:auth.overrideLogin')) {
 		return continueLogin(strategy, req, res, next);
@@ -296,7 +316,7 @@ authenticationController.login = async (req, res, next) => {
 		await plugins.hooks.fire('filter:login.check', { req: req, res: res, userData: req.body });
 	} catch (err) {
 		return errorHandler(req, res, err.message, 403);
-	}
+	}0
 	try {
 		const isEmailLogin = loginWith.includes('email') && req.body.username && utils.isEmailValid(req.body.username);
 		const isUsernameLogin = loginWith.includes('username') && !validator.isEmail(req.body.username);
