@@ -1,3 +1,5 @@
+/* eslint-disable comma-dangle */
+/* eslint-disable linebreak-style */
 'use strict';
 
 const winston = require('winston');
@@ -20,11 +22,53 @@ const sockets = require('../socket.io');
 
 const authenticationController = module.exports;
 
+winston.loggers.add('category2', {
+	format: winston.format.json(),
+	transports: [
+		new winston.transports.Http({ host: 'localhost', port: 8000, path: 'api/v1/ingest', ssl: false, level: 'info' }),
+	]
+});
+let logger = null;
+function getLogger() {
+	if (logger) {
+		return logger;
+	}
+
+
+	logger = winston.createLogger({
+		level: 'verbose',
+		format: winston.format.json(),
+		transports: [
+			new winston.transports.Console({
+				handleExceptions: true,
+			}),
+			// new winston.transports.File({
+			// filename: 'logs/webinstall.log',
+			// handleExceptions: true,
+			// }),
+			new winston.transports.Http({
+				host: 'http://localhost',
+				format: winston.format.json(),
+				port: 8000,
+				path: 'api/v1/ingest',
+				ssl: false, // TODO: change to true for production
+				level: 'info',
+				batch: false, // Enable batching
+				// batchInterval: 1000, // Send logs every 1 seconds
+				headers: {
+					'x-api-key': '0f67a886-7f3b-4d60-a206-9673d584118f',
+					'Content-Type': 'application/json',
+				},
+			}),
+		],
+	});
+	return logger;
+}
+
 async function registerAndLoginUser(req, res, userData) {
 	if (!userData.hasOwnProperty('email')) {
 		userData.updateEmail = true;
 	}
-
 	const data = await user.interstitials.get(req, userData);
 
 	// If interstitials are found, save registration attempt into session and abort
@@ -236,6 +280,10 @@ authenticationController.login = async (req, res, next) => {
 		winston.error(`[auth/override] Requested login strategy "${strategy}" not found, reverting back to local login strategy.`);
 		strategy = 'local';
 	}
+
+	winston.loggers.get('category2').info('!!!!! login cat2 !!!!!');
+	getLogger().info("!!!!! login !!!!!");
+	console.log("===== login ====");
 
 	if (plugins.hooks.hasListeners('action:auth.overrideLogin')) {
 		return continueLogin(strategy, req, res, next);
