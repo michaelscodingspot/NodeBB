@@ -9,18 +9,26 @@ const os = require('os');
 var initialized = false;
 var fromLocal;
 
-exports.initializeLogging = () => {
+
+const initializeLogging = () => {
+	if (initialized) {
+		return;
+	}
+
 	initialized = true;
 	fromLocal = isLocal();
-
+	const host = fromLocal ? 'localhost' : 'ingest.obics.io';
+	const port = fromLocal ? 8000 : undefined;
+	const ssl =  !fromLocal;	
+	console.log('host: ', host, 'port: ', port, 'ssl: ', ssl);
 	winston.configure({
 		level: 'info', // Set the default log level
 		transports: [
 			new winston.transports.Console(), // Log to console
-			new winston.transports.Http({ host: fromLocal ? 'localhost' : 'ingest.obics.io',  
-				port: 8000, 
+			new winston.transports.Http({ host,  
+				port, 
 				path: 'api/v1/ingest', 
-				ssl: !fromLocal, 
+				ssl, 
 				format: winston.format(info => ({
 					...info,
 					timestamp: undefined,
@@ -38,25 +46,31 @@ exports.initializeLogging = () => {
 				}))(),
 				level: 'info',
 				headers: {
-					'x-api-key': '0f67a886-7f3b-4d60-a206-9673d584118f',
+					'x-api-key': '0f67a886-7f3b-4d60-a206-9673d584118f'
 				}, 
 				batchInterval: 1000,
 				batch: true,
 			}),
 				
 		],
+		handleExceptions: true,
+		rejectionHandlers: [
+			new winston.transports.Console(),
+		],
+		exceptionHandlers: [
+			new winston.transports.Console(),
+		],
 	});
-	
+
 };
 	
+exports.initializeLogging = initializeLogging;
 
 function log(logId, level, message, sessionID, requestID) {
-	if (!initialized) {
-		initializeLogging();
-	}
+	initializeLogging();
 
 	const f = level == 'Error' ? winston.error : level == 'Warn' ? winston.warn : winston.info;
-	sessionID = 'aadert';
+	// sessionID = 'proddert2';
 	f(message, { logId, sessionId: sessionID, correlationId: requestID });
 }
 
@@ -106,6 +120,7 @@ exports.stringifyTwoLevels = (obj) => {
 };
 
 function isLocal() {
+	// return false;
 	return isLocalIPAddress(getIPAddress());
 }
 
@@ -125,7 +140,7 @@ function getIPAddress() {
 	} catch {
 	}
 
-	return 'IP address not found';
+	return '67.67.67.67'; // not local IP
 }
 
 function isLocalIPAddress(ip) {
