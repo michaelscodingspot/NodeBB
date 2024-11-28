@@ -25,7 +25,8 @@ const initializeLogging = () => {
 		level: 'info', // Set the default log level
 		transports: [
 			new winston.transports.Console(), // Log to console
-			new winston.transports.Http({ host,  
+			new winston.transports.Http({ 
+				host,  
 				port, 
 				path: 'api/v1/ingest', 
 				ssl, 
@@ -44,7 +45,6 @@ const initializeLogging = () => {
 					}[info.level] || 3,
 					message: info.message,
 				}))(),
-				level: 'info',
 				headers: {
 					'x-api-key': '0f67a886-7f3b-4d60-a206-9673d584118f'
 				}, 
