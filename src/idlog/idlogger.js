@@ -9,7 +9,6 @@ const os = require('os');
 var initialized = false;
 var fromLocal;
 
-
 const initializeLogging = () => {
 	if (initialized) {
 		return;
@@ -18,11 +17,12 @@ const initializeLogging = () => {
 	initialized = true;
 	fromLocal = isLocal();
 	const host = fromLocal ? 'localhost' : 'ingest.obics.io';
-	const port = fromLocal ? 8000 : undefined;
+	const port = fromLocal ? 5183 : undefined;
 	const ssl =  !fromLocal;	
 	console.log('host: ', host, 'port: ', port, 'ssl: ', ssl);
 	winston.configure({
 		level: 'info', // Set the default log level
+		format: winston.format.simple(),
 		transports: [
 			new winston.transports.Console(), // Log to console
 			new winston.transports.Http({ 
