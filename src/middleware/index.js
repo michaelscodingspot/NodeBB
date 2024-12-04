@@ -85,9 +85,15 @@ middleware.generateRequestId = helpers.try(async (req, res, next) => {
 });
 
 middleware.logPageRoute = helpers.try(async (req, res, next) => {
-	logInfo('rpag',
-		`PageRouteStarted: url=${req.url} method=${req.method} userLoggedIn=${req.loggedIn}	ip=${req.ip} uid=${req.uid} query=${JSON.stringify(req.query)}`
-		, req);
+	logInfo('rpag', JSON.stringify({
+		"event": "PageRouteStarted",
+		"url": req.url,
+		"method": req.method,
+		"userLoggedIn": req.loggedIn,
+		"ip": req.ip,
+		"uid": req.uid,
+		"query": req.query
+	}) , req);
 	next();
 });
 

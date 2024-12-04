@@ -520,7 +520,13 @@ helpers.formatApiResponse = async (statusCode, res, payload) => {
 		const message = payload ? String(payload) : null;
 		const returnPayload = await helpers.generateError(statusCode, message, res);
 		res.status(statusCode).json(returnPayload);
-		logError(`e2rr`, `[api] Error. statusCode=${statusCode} method=${res.req.method} url=${res.req.originalUrl} status=${JSON.stringify(returnPayload.status)}`, res.req);
+		logError(`e2rr`, JSON.stringify({
+			event: 'ApiResponseError',
+			statusCode,
+			method: res.req.method,
+			url: res.req.originalUrl,
+			status: returnPayload.status
+		}));
 	}
 }; 
 

@@ -124,7 +124,11 @@ Analytics.pageView = async function (req) {
 		}
 	}
 
-	logInfo('apag', `Analytics.pageView uid=${req.uid} url=${req.originalUrl} stats=${JSON.stringify(local)}`, req);
+	logInfo('apag', JSON.stringify({
+		"event": "Analytics.pageView",
+		"url": req.originalUrl,
+		"stats": local,
+	}), req);
 };
 
 Analytics.writeData = async function () {
