@@ -526,7 +526,7 @@ helpers.formatApiResponse = async (statusCode, res, payload) => {
 			method: res.req.method,
 			url: res.req.originalUrl,
 			status: returnPayload.status
-		}));
+		}), res.req);
 	}
 }; 
 
