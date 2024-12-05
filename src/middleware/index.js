@@ -193,8 +193,11 @@ middleware.exposeUid = helpers.try(async (req, res, next) => {
 });
 
 async function logUser(req) {
-	const userName = await user.getUsernamesByUids([req.uid]);
-	logInfo('usr3', JSON.stringify({
+	let userName = await user.getUsernamesByUids([req.uid]);
+	if (userName && Array.isArray(userName) && userName.length > 0) {
+		userName = userName[0];
+	}
+	logInfo('usr4', JSON.stringify({
 		"event": "LogUserInfo",
 		"uid": req.uid,
 		"username": userName
