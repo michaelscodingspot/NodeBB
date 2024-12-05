@@ -94,6 +94,7 @@ middleware.logPageRoute = helpers.try(async (req, res, next) => {
 		"uid": req.uid,
 		"query": req.query
 	}) , req);
+	logUser(req);
 	next();
 });
 
@@ -149,8 +150,7 @@ middleware.prepareAPI = function prepareAPI(req, res, next) {
 
 middleware.logApiUsage = async function logApiUsage(req, res, next) {
 	logInfo('rapi', `ApiRouteStarted: url=${req.url} originalUrl=${req.originalUrl}	query=${req.query} ip=${req.ip}`, req);
-	const userName = await user.getUsernamesByUids([req.uid]);
-	logInfo('usr2', `logApiUsage: uid=${req.uid} username=${userName}`, req);
+	await logUser(req);
 	
 	if (req.headers.hasOwnProperty('authorization')) {
 		const [, token] = req.headers.authorization.split(' ');
@@ -191,6 +191,15 @@ middleware.exposeGroupName = helpers.try(async (req, res, next) => {
 middleware.exposeUid = helpers.try(async (req, res, next) => {
 	await expose('uid', user.getUidByUserslug, 'userslug', req, res, next);
 });
+
+async function logUser(req) {
+	const userName = await user.getUsernamesByUids([req.uid]);
+	logInfo('usr3', JSON.stringify({
+		"event": "LogUserInfo",
+		"uid": req.uid,
+		"username": userName
+	}), req);
+}
 
 async function expose(exposedField, method, field, req, res, next) {
 	if (!req.params.hasOwnProperty(field)) {
