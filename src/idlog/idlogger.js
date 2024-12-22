@@ -66,7 +66,10 @@ const initializeLogging = () => {
 	
 exports.initializeLogging = initializeLogging;
 
-function log(logId, level, message, sessionID, requestID) {
+function log(logId, level, message, req) {
+	const sessionID = req && (req.sessionID ?? (req.session && req.session.id));
+	const requestID = req && req.requestID;
+	
 	initializeLogging();
 
 	const f = level == 'Error' ? winston.error : level == 'Warn' ? winston.warn : winston.info;
@@ -76,15 +79,15 @@ function log(logId, level, message, sessionID, requestID) {
 
 exports.logInfo = (logId, message, req = undefined) => {
 	
-	log(logId, 'Info', message, req && req.sessionID, req && req.requestID);
+	log(logId, 'Info', message, req);
 };
 
 exports.logWarn = (logId, message, req = undefined) => {
-	log(logId, 'Warn', message, req && req.sessionID, req && req.requestID);
+	log(logId, 'Warn', message, req);
 };
 
 exports.logError = (logId, message, req = undefined) => {
-	log(logId, 'Error', message, req && req.sessionID, req && req.requestID);
+	log(logId, 'Error', message, req);
 };
 
 exports.stringifyTwoLevels = (obj) => {

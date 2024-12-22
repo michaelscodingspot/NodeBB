@@ -269,7 +269,7 @@ module.exports = function (Posts) {
 
 		const [canPost] = await Promise.all([
 			privileges.categories.can(typeToPrivilege[type], cid, data.uid),
-			user.isReadyToQueue(data.uid, cid),
+			user.isReadyToQueue(data.uid, cid, data.req),
 		]);
 		if (!canPost) {
 			throw new Error('[[error:no-privileges]]');

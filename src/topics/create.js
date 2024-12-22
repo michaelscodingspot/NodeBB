@@ -80,7 +80,7 @@ module.exports = function (Topics) {
 	};
 
 	Topics.post = async function (data) {
-		logInfo('ll11', 'Topics.post started');
+		logInfo('ll11', 'Topics.post started', data.req);
 		data = await plugins.hooks.fire('filter:topic.post', data);
 		const { uid } = data;
 
@@ -118,7 +118,7 @@ module.exports = function (Topics) {
 
 		await guestHandleValid(data);
 		if (!data.fromQueue) {
-			await user.isReadyToPost(uid, data.cid);
+			await user.isReadyToPost(uid, data.cid, data.req);
 		}
 
 		const tid = await Topics.create(data);
@@ -177,6 +177,11 @@ module.exports = function (Topics) {
 			privileges.users.isAdministrator(uid),
 		]);
 
+		logInfo('repl', JSON.stringify({
+			"event": "Topics.reply started",
+			"topicData": topicData
+		}), data.req);
+
 		await canReply(data, topicData);
 
 		data.cid = topicData.cid;
@@ -185,7 +190,7 @@ module.exports = function (Topics) {
 		data.content = String(data.content || '').trimEnd();
 
 		if (!data.fromQueue && !isAdmin) {
-			await user.isReadyToPost(uid, data.cid);
+			await user.isReadyToPost(uid, data.cid, data.req);
 			Topics.checkContent(data.content);
 			if (!await posts.canUserPostContentWithLinks(uid, data.content)) {
 				throw new Error(`[[error:not-enough-reputation-to-post-links, ${meta.config['min:rep:post-links']}]]`);

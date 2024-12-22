@@ -8,11 +8,11 @@ const groups = require('../groups');
 const { logInfo, logError } = require('../idlog/idlogger');
 
 module.exports = function (User) {
-	User.isReadyToPost = async function (uid, cid) {
-		await isReady(uid, cid, 'lastposttime');
+	User.isReadyToPost = async function (uid, cid, req) {
+		await isReady(uid, cid, 'lastposttime', req);
 	};
 
-	User.isReadyToQueue = async function (uid, cid) {
+	User.isReadyToQueue = async function (uid, cid, req) {
 		await isReady(uid, cid, 'lastqueuetime');
 	};
 
@@ -30,7 +30,7 @@ module.exports = function (User) {
 		}
 	};
 
-	async function isReady(uid, cid, field) {
+	async function isReady(uid, cid, field, req) {
 		if (parseInt(uid, 10) === 0) {
 			return;
 		}
@@ -84,7 +84,7 @@ module.exports = function (User) {
 			throw new Error(`[[error:too-many-posts, ${meta.config.postDelay}]]`);
 		}
 
-		logInfo("lll4", "posts.isReady OK");
+		logInfo("lll4", "posts.isReady OK", req);
 
 	}
 
