@@ -19,6 +19,7 @@
 
 'use strict';
 
+require('./otel-setup');
 require('./require-main');
 
 const nconf = require('nconf');

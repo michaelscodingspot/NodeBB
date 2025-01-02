@@ -68,13 +68,13 @@ exports.initializeLogging = initializeLogging;
 
 function log(logId, level, message, req) {
 	const sessionID = req && (req.sessionID ?? (req.session && req.session.id));
-	const requestID = req && req.requestID;
+	// const requestID = req && req.requestID;
 	
 	initializeLogging();
 
 	const f = level == 'Error' ? winston.error : level == 'Warn' ? winston.warn : winston.info;
 	// sessionID = 'proddert2';
-	f(message, { logId, sessionId: sessionID, correlationId: requestID });
+	f(message, { logId, sessionId: sessionID });
 }
 
 exports.logInfo = (logId, message, req = undefined) => {
