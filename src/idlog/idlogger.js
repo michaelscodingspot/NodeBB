@@ -32,17 +32,16 @@ const initializeLogging = () => {
 				ssl, 
 				format: winston.format(info => ({
 					...info,
-					timestamp: undefined,
-					time: Date.now(),
-					level: {
-						silly: 1,
-						debug: 1,
-						verbose: 2, 
-						info: 3,
-						warn: 4,
-						error: 5,
-						critical: 6,
-					}[info.level] || 3,
+					timestamp: Date.now(),
+					severity: {
+						silly: "VERBOSE",
+						debug: "DEBUG",
+						verbose: "VERBOSE", 
+						info: "INFO",
+						warn: "WARN",
+						error: "ERROR",
+						critical: "CRITICAL",
+					}[info.level] || "INFO",
 					message: info.message,
 				}))(),
 				headers: {
