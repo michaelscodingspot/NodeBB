@@ -21,7 +21,7 @@ const initializeLogging = () => {
 	const ssl =  !fromLocal;	
 	console.log('host: ', host, 'port: ', port, 'ssl: ', ssl);
 	winston.configure({
-		level: 'info', // Set the default log level
+		severity: 'info', // Set the default log level
 		format: winston.format.simple(),
 		transports: [
 			new winston.transports.Console(), // Log to console
