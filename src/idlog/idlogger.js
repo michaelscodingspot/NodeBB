@@ -33,6 +33,7 @@ const initializeLogging = () => {
 				format: winston.format(info => ({
 					...info,
 					timestamp: Date.now(),
+					service: 'nodebb',
 					severity: {
 						silly: "VERBOSE",
 						debug: "DEBUG",
