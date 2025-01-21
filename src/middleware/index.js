@@ -1,3 +1,4 @@
+/* eslint-disable linebreak-style */
 'use strict';
 
 const async = require('async');
@@ -19,7 +20,7 @@ const cacheCreate = require('../cache/lru');
 const helpers = require('./helpers');
 const api = require('../api');
 const { logInfo } = require('../idlog/idlogger');
-
+const forumAnalytics = require('../idlog/forum-analytics');
 
 const controllers = {
 	api: require('../controllers/api'),
@@ -86,15 +87,16 @@ middleware.generateRequestId = helpers.try(async (req, res, next) => {
 
 middleware.logPageRoute = helpers.try(async (req, res, next) => {
 	logInfo('rpag', JSON.stringify({
-		"event": "PageRouteStarted",
-		"url": req.url,
-		"method": req.method,
-		"userLoggedIn": req.loggedIn,
-		"ip": req.ip,
-		"uid": req.uid,
-		"query": req.query
-	}) , req);
+		event: 'PageRouteStarted',
+		url: req.url,
+		method: req.method,
+		userLoggedIn: req.loggedIn,
+		ip: req.ip,
+		uid: req.uid,
+		query: req.query,
+	}), req);
 	logUser(req);
+	forumAnalytics.pageView(req.uid, req.ip, req.url);
 	next();
 });
 
