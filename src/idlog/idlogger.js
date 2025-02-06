@@ -19,7 +19,9 @@ const initializeLogging = () => {
 	const host = fromLocal ? 'localhost' : 'ingest.obics.io';
 	const port = fromLocal ? 5183 : undefined;
 	const ssl =  !fromLocal;	
-	console.log('host: ', host, 'port: ', port, 'ssl: ', ssl);
+	const hostname = os.hostname();
+	const env = fromLocal ? 'dev' : 'prod';
+	console.log('hostname: ', hostname, 'target: ', host, 'port: ', port, 'ssl: ', ssl);
 	winston.configure({
 		severity: 'info', // Set the default log level
 		format: winston.format.simple(),
@@ -34,6 +36,8 @@ const initializeLogging = () => {
 					...info,
 					timestamp: Date.now(),
 					service: 'nodebb',
+					host: hostname,
+					env,
 					severity: {
 						silly: "TRACE",
 						debug: "DEBUG",
@@ -74,7 +78,7 @@ function log(event_id, level, message, req) {
 
 	const f = level == 'Error' ? winston.error : level == 'Warn' ? winston.warn : winston.info;
 	// sessionID = 'proddert2';
-	f(message, { event_id, sessionId: sessionID });
+	f(message, { event_id, session_id: sessionID });
 }
 
 exports.logInfo = (event_id, message, req = undefined) => {
