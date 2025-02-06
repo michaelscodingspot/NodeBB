@@ -249,7 +249,7 @@ authenticationController.login = async (req, res, next) => {
 	
 	const loginWith = meta.config.allowLoginWith || 'username-email';
 	req.body.username = String(req.body.username).trim();
-	winston.info(`User ${req.body.username} logged in`, { logId: "login" });
+	winston.info(`User ${req.body.username} logged in`, { event_id: "login" });
 	const errorHandler = res.locals.noScriptErrors || helpers.noScriptErrors;
 	try {
 		await plugins.hooks.fire('filter:login.check', { req: req, res: res, userData: req.body });

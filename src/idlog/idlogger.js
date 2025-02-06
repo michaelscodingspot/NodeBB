@@ -35,13 +35,13 @@ const initializeLogging = () => {
 					timestamp: Date.now(),
 					service: 'nodebb',
 					severity: {
-						silly: "VERBOSE",
+						silly: "TRACE",
 						debug: "DEBUG",
-						verbose: "VERBOSE", 
+						verbose: "TRACE", 
 						info: "INFO",
 						warn: "WARN",
 						error: "ERROR",
-						critical: "CRITICAL",
+						critical: "FATAL",
 					}[info.level] || "INFO",
 					message: info.message,
 				}))(),
@@ -66,7 +66,7 @@ const initializeLogging = () => {
 	
 exports.initializeLogging = initializeLogging;
 
-function log(logId, level, message, req) {
+function log(event_id, level, message, req) {
 	const sessionID = req && (req.sessionID ?? (req.session && req.session.id));
 	// const requestID = req && req.requestID;
 	
@@ -74,20 +74,20 @@ function log(logId, level, message, req) {
 
 	const f = level == 'Error' ? winston.error : level == 'Warn' ? winston.warn : winston.info;
 	// sessionID = 'proddert2';
-	f(message, { logId, sessionId: sessionID });
+	f(message, { event_id, sessionId: sessionID });
 }
 
-exports.logInfo = (logId, message, req = undefined) => {
+exports.logInfo = (event_id, message, req = undefined) => {
 	
-	log(logId, 'Info', message, req);
+	log(event_id, 'Info', message, req);
 };
 
-exports.logWarn = (logId, message, req = undefined) => {
-	log(logId, 'Warn', message, req);
+exports.logWarn = (event_id, message, req = undefined) => {
+	log(event_id, 'Warn', message, req);
 };
 
-exports.logError = (logId, message, req = undefined) => {
-	log(logId, 'Error', message, req);
+exports.logError = (event_id, message, req = undefined) => {
+	log(event_id, 'Error', message, req);
 };
 
 exports.stringifyTwoLevels = (obj) => {
