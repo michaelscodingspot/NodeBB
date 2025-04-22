@@ -265,6 +265,7 @@ module.exports = function (Topics) {
 		postData.timestampISO = utils.toISOString(postData.timestamp);
 		postData.topic.title = String(postData.topic.title);
 
+		postData.content = postData.content.replace('<p dir="auto">', '').replace('</p>', '').trimEnd();
 		logInfo('post', JSON.stringify({ event: 'NewPost', ...postData }), data.req);
 		return postData;
 	}
