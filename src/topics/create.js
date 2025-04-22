@@ -1,3 +1,4 @@
+/* eslint-disable linebreak-style */
 
 'use strict';
 
@@ -264,8 +265,7 @@ module.exports = function (Topics) {
 		postData.timestampISO = utils.toISOString(postData.timestamp);
 		postData.topic.title = String(postData.topic.title);
 
-		logInfo('ltr3', `Topics.onNewPost finished. ${JSON.stringify(postData)}`, data.req);
-
+		logInfo('post', JSON.stringify({ event: 'NewPost', ...postData }), data.req);
 		return postData;
 	}
 
