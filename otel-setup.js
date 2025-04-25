@@ -1,14 +1,14 @@
+/* eslint-disable linebreak-style */
+/* eslint-disable indent */
 /* eslint-disable no-tabs */
 /* eslint-disable spaced-comment */
 /* eslint-disable no-mixed-spaces-and-tabs */
-/* eslint-disable linebreak-style */
 /* eslint-disable lines-around-directive */
 'use strict';
 
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
-const { ExpressInstrumentation } = require('@opentelemetry/instrumentation-express'); // optional, but often used with HTTP
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
 const {
@@ -16,6 +16,10 @@ const {
 } = require('@opentelemetry/sdk-trace-base');
 const { Resource } = require('@opentelemetry/resources');
 const { SemanticResourceAttributes } = require('@opentelemetry/semantic-conventions');
+const { context } = require('@opentelemetry/api');
+const CacheManager = require('./lib/cache-manager');
+
+const cache = new CacheManager();
 
 // 1. Create a tracer provider
 const provider = new NodeTracerProvider({
@@ -32,27 +36,48 @@ const exporter = new OTLPTraceExporter({
 	},
 });
 
-/**
- * 3. Option A: If you want the old SimpleSpanProcessor (sends each span immediately)
- *     provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
- *
- *    Option B: Use a BatchSpanProcessor (buffers + sends in batches)
- */
-provider.addSpanProcessor(
-	new BatchSpanProcessor(exporter, {
-		// The following are optional defaults:
-		maxExportBatchSize: 512, // Maximum spans per batch
-		maxQueueSize: 2048, // Maximum queue size
-		scheduledDelayMillis: 5000, // Interval between processing batches
-		exportTimeoutMillis: 30000, // Timeout for export calls
-	})
-);
+class SessionEnrichingSpanProcessor {
+	constructor(delegate) {
+		this._delegate = delegate;
+	}
+
+	onStart(span) {
+		const sid = cache.get(getTraceIdFromSpan(span));
+		if (sid) {
+			span.setAttribute('session_id', sid);
+		}
+
+		this._delegate.onStart(span, context);
+	}
+
+	onEnd(span) {
+		this._delegate.onEnd(span);
+	}
+
+	shutdown() {
+		return this._delegate.shutdown();
+	}
+
+	forceFlush() {
+		return this._delegate.forceFlush();
+	}
+}
+
+
+const batchSpanProcessor = new BatchSpanProcessor(exporter, {
+	// The following are optional defaults:
+	maxExportBatchSize: 512, // Maximum spans per batch
+	maxQueueSize: 2048, // Maximum queue size
+	scheduledDelayMillis: 5000, // Interval between processing batches
+	exportTimeoutMillis: 30000, // Timeout for export calls
+});
+
+provider.addSpanProcessor(new SessionEnrichingSpanProcessor(batchSpanProcessor));
 
 // 4. Register the provider so it becomes the global tracer provider
 provider.register();
 
 // 5. Register auto-instrumentations
-
 registerInstrumentations({
 	tracerProvider: provider,
 	instrumentations: [
@@ -70,23 +95,14 @@ registerInstrumentations({
 						if (upToPeriod > 0) {
 							const sid = sidFull.substring(3, upToPeriod);
 							span.setAttribute('session_id', sid);
-							// console.log('!!! Cookie Header express.sid:', sid);
+							cache.set(getTraceIdFromSpan(span), sid);
 						}
 					}
 				}
-
-				// Example: enrich with user ID and request ID from headers
-				// if (headers['x-user-id']) {
-				// 	span.setAttribute('user.id', headers['x-user-id']);
-				// }
-				// if (headers['x-request-id']) {
-				// 	span.setAttribute('request.id', headers['x-request-id']);
-				// }
 			},
 		}),
 
 		// Add other instrumentations you want (excluding HTTP to avoid duplication)
-		// new ExpressInstrumentation(),
 
 		// And the rest from auto-instrumentations, but excluding HTTP explicitly
 		getNodeAutoInstrumentations({
@@ -97,3 +113,7 @@ registerInstrumentations({
 		}),
 	],
 });
+
+function getTraceIdFromSpan(span) {
+	return span._spanContext.traceId;
+}
