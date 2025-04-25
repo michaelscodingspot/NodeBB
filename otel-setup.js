@@ -1,3 +1,4 @@
+/* eslint-disable no-tabs */
 /* eslint-disable spaced-comment */
 /* eslint-disable no-mixed-spaces-and-tabs */
 /* eslint-disable linebreak-style */
@@ -6,6 +7,8 @@
 
 const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
 const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
+const { ExpressInstrumentation } = require('@opentelemetry/instrumentation-express'); // optional, but often used with HTTP
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
 const {
@@ -49,7 +52,48 @@ provider.addSpanProcessor(
 provider.register();
 
 // 5. Register auto-instrumentations
+
 registerInstrumentations({
 	tracerProvider: provider,
-	instrumentations: [getNodeAutoInstrumentations()],
+	instrumentations: [
+		// First, override the HTTP instrumentation so we can customize it
+		new HttpInstrumentation({
+			requestHook: (span, requestInfo) => {
+				const headers = requestInfo.rawHeaders;
+				const cookieIndex = headers.findIndex(header => header.toLowerCase() === 'cookie');
+				if (cookieIndex !== -1 && cookieIndex + 1 < headers.length) {
+					const cookieHeader = headers[cookieIndex + 1];
+					const sidFull = cookieHeader.split('; ').find(cookie => cookie.startsWith('express.sid=')).substring(12);
+					if (sidFull) {
+						// console.log('!!! Cookie Header express.sidFull:', sidFull);
+						const upToPeriod = sidFull.indexOf('.');
+						if (upToPeriod > 0) {
+							const sid = sidFull.substring(3, upToPeriod);
+							span.setAttribute('session_id', sid);
+							// console.log('!!! Cookie Header express.sid:', sid);
+						}
+					}
+				}
+
+				// Example: enrich with user ID and request ID from headers
+				// if (headers['x-user-id']) {
+				// 	span.setAttribute('user.id', headers['x-user-id']);
+				// }
+				// if (headers['x-request-id']) {
+				// 	span.setAttribute('request.id', headers['x-request-id']);
+				// }
+			},
+		}),
+
+		// Add other instrumentations you want (excluding HTTP to avoid duplication)
+		// new ExpressInstrumentation(),
+
+		// And the rest from auto-instrumentations, but excluding HTTP explicitly
+		getNodeAutoInstrumentations({
+			// disable default HTTP instrumentation to avoid double registration
+			'@opentelemetry/instrumentation-http': {
+				enabled: false,
+			},
+		}),
+	],
 });
