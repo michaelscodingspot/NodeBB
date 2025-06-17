@@ -21,7 +21,7 @@ const CacheManager = require('./lib/cache-manager');
 
 const cache = new CacheManager();
 
-// 1. Create a tracer provider
+// 1. Create a tracer  provider
 const provider = new NodeTracerProvider({
 	resource: new Resource({
 		[SemanticResourceAttributes.SERVICE_NAME]: 'nodebb', // Replace with your service name
